@@ -1,0 +1,31 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs & evidence (never commit real scan output)
+*.log
+evidence/
+reports/raw/
+
+# Secrets & config
+.env
+.env.*
+*.pem
+*.key
+credentials.*
+
+# Lab runtime artifacts
+docker-compose.override.yml
+node_modules/
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Scan tool outputs
+*.sarif
+nmap-*.xml
+*.json.bak
