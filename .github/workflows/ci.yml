@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt needed on:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race -cover ./...
+
+      - name: Build
+        run: |
+          go build -o dist/secscan ./cmd/secscan
+          go build -o dist/labserver ./cmd/labserver
+
+      - name: Smoke test against the loopback lab target
+        run: |
+          ./dist/labserver -addr 127.0.0.1:8080 &
+          server_pid=$!
+          trap 'kill $server_pid' EXIT
+          sleep 2
+          ./dist/secscan -format json -out ci-report.json http://127.0.0.1:8080/insecure
+          python3 - <<'PY'
+          import json, sys
+          report = json.load(open("ci-report.json"))
+          checks = {f["check"] for t in report["targets"] for f in t["findings"]}
+          assert report["authorization"]["loopback_only"] is True, report["authorization"]
+          assert {"content-security-policy", "plain-http", "x-content-type-options"} <= checks, checks
+          print("smoke test ok:", sorted(checks))
+          PY
+
+      - name: Refuse an unauthorized external target
+        run: |
+          if ./dist/secscan https://example.org >/dev/null 2>&1; then
+            echo "secscan accepted a non-loopback target without -authorized"; exit 1
+          fi
+          echo "external scope correctly refused"

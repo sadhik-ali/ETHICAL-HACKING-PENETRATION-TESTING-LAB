@@ -29,3 +29,14 @@ venv/
 *.sarif
 nmap-*.xml
 *.json.bak
+
+# Go build output
+build/
+dist/
+*.exe
+*.tmp
+
+# Local scan output (only the two committed examples under reports/ are allowed)
+reports/*
+!reports/lab-https.json
+!reports/lab-multi.json

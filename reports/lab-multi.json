@@ -1,0 +1,312 @@
+{
+  "tool": "secscan",
+  "version": "0.1.0",
+  "generated_at": "2026-10-25T06:16:41Z",
+  "scope_note": "Passive, non-intrusive inspection of HTTP response headers, cookies and TLS certificates. No exploitation, fuzzing, credential testing, port scanning or denial-of-service behaviour. Point it only at systems you own or have written permission to test.",
+  "authorization": {
+    "loopback_only": true,
+    "written_permission_confirmed": false,
+    "targets": [
+      "http://127.0.0.1:8080/bad-csp",
+      "http://127.0.0.1:8080/redirect",
+      "http://127.0.0.1:8080/"
+    ]
+  },
+  "summary": {
+    "targets": 3,
+    "findings": 18,
+    "by_severity": {
+      "high": 5,
+      "info": 3,
+      "low": 4,
+      "medium": 6
+    },
+    "by_check": {
+      "clickjacking-protection": 2,
+      "content-security-policy": 2,
+      "cookie-httponly": 1,
+      "cookie-samesite": 1,
+      "cookie-secure": 1,
+      "permissions-policy": 2,
+      "plain-http": 3,
+      "referrer-policy": 2,
+      "server-version-disclosure": 1,
+      "x-content-type-options": 2,
+      "x-powered-by-disclosure": 1
+    },
+    "highest_severity": "high",
+    "errors": 0
+  },
+  "targets": [
+    {
+      "url": "http://127.0.0.1:8080/bad-csp",
+      "final_url": "http://127.0.0.1:8080/bad-csp",
+      "method": "GET",
+      "status_code": 200,
+      "accessed_at": "2026-10-25T06:16:41Z",
+      "elapsed_ms": 2,
+      "response_headers": {
+        "Content-Length": [
+          "187"
+        ],
+        "Content-Security-Policy": [
+          "default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval'"
+        ],
+        "Content-Type": [
+          "text/html; charset=utf-8"
+        ],
+        "Date": [
+          "Sun, 25 Oct 2026 06:16:41 GMT"
+        ],
+        "Strict-Transport-Security": [
+          "max-age=60"
+        ],
+        "X-Content-Type-Options": [
+          "nosniff; charset=utf-8"
+        ],
+        "X-Frame-Options": [
+          "ALLOWALL"
+        ]
+      },
+      "findings": [
+        {
+          "check": "content-security-policy",
+          "severity": "high",
+          "title": "Content-Security-Policy contains unsafe sources",
+          "detail": "'unsafe-inline', 'unsafe-eval' keep inline or eval'd script executable, which defeats the purpose of the policy.",
+          "evidence": "Content-Security-Policy: default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval'",
+          "remediation": "Remove the unsafe keywords; whitelist exact origins, or use nonces/hashes for the few inline scripts the app needs.",
+          "reference": "https://content-security-policy.com/"
+        },
+        {
+          "check": "plain-http",
+          "severity": "high",
+          "title": "Target served over unencrypted HTTP",
+          "detail": "Content fetched from http://127.0.0.1:8080/bad-csp travels in plaintext: credentials, session cookies and page data are readable by anyone on the path.",
+          "evidence": "http://127.0.0.1:8080/bad-csp",
+          "remediation": "Serve the site over HTTPS only and redirect HTTP to HTTPS with 301.",
+          "reference": "https://owasp.org/www-project-top-ten/"
+        },
+        {
+          "check": "clickjacking-protection",
+          "severity": "medium",
+          "title": "X-Frame-Options allows framing by any origin",
+          "detail": "ALLOWALL is a non-standard value that older browsers honour, leaving the page frameable.",
+          "evidence": "X-Frame-Options: ALLOWALL",
+          "remediation": "Use DENY or SAMEORIGIN.",
+          "reference": "https://developer.mozilla.org/docs/Web/HTTP/Headers"
+        },
+        {
+          "check": "referrer-policy",
+          "severity": "low",
+          "title": "Referrer-Policy header missing",
+          "detail": "Outbound requests can leak full URLs - which often carry tokens or identifiers - to third-party origins in the Referer header.",
+          "evidence": "header absent",
+          "remediation": "Send: Referrer-Policy: strict-origin-when-cross-origin (or no-referrer for sensitive pages).",
+          "reference": "https://developer.mozilla.org/docs/Web/HTTP/Headers"
+        },
+        {
+          "check": "x-content-type-options",
+          "severity": "low",
+          "title": "X-Content-Type-Options has an unexpected value",
+          "detail": "Only the exact token nosniff disables browser MIME sniffing.",
+          "evidence": "X-Content-Type-Options: nosniff; charset=utf-8",
+          "remediation": "Set the header to exactly: nosniff",
+          "reference": "https://developer.mozilla.org/docs/Web/HTTP/Headers"
+        },
+        {
+          "check": "permissions-policy",
+          "severity": "info",
+          "title": "Permissions-Policy header missing",
+          "detail": "Browser features such as camera, microphone and geolocation stay available to the document and its embeds.",
+          "evidence": "header absent",
+          "remediation": "Send: Permissions-Policy: camera=(), microphone=(), geolocation=() to disable features the app does not use.",
+          "reference": "https://owasp.org/www-project-secure-headers/"
+        }
+      ]
+    },
+    {
+      "url": "http://127.0.0.1:8080/redirect",
+      "final_url": "http://127.0.0.1:8080/insecure",
+      "method": "GET",
+      "status_code": 200,
+      "accessed_at": "2026-10-25T06:16:41Z",
+      "elapsed_ms": 1,
+      "response_headers": {
+        "Content-Length": [
+          "189"
+        ],
+        "Content-Type": [
+          "text/html; charset=utf-8"
+        ],
+        "Date": [
+          "Sun, 25 Oct 2026 06:16:41 GMT"
+        ],
+        "Server": [
+          "Apache/2.4.41 (Ubuntu)"
+        ],
+        "X-Powered-By": [
+          "PHP/7.4.3"
+        ]
+      },
+      "set_cookie_headers": [
+        "tracking=seen-1; Path=/"
+      ],
+      "findings": [
+        {
+          "check": "content-security-policy",
+          "severity": "high",
+          "title": "Content-Security-Policy header missing",
+          "detail": "Without CSP the browser has no policy restricting script sources, so any injected markup executes as the page origin.",
+          "evidence": "header absent",
+          "remediation": "Send a CSP that whitelists script sources, for example: default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'.",
+          "reference": "https://content-security-policy.com/"
+        },
+        {
+          "check": "plain-http",
+          "severity": "high",
+          "title": "Target served over unencrypted HTTP",
+          "detail": "Content fetched from http://127.0.0.1:8080/insecure travels in plaintext: credentials, session cookies and page data are readable by anyone on the path.",
+          "evidence": "http://127.0.0.1:8080/insecure",
+          "remediation": "Serve the site over HTTPS only and redirect HTTP to HTTPS with 301.",
+          "reference": "https://owasp.org/www-project-top-ten/"
+        },
+        {
+          "check": "clickjacking-protection",
+          "severity": "medium",
+          "title": "Clickjacking protection missing (X-Frame-Options or CSP frame-ancestors)",
+          "detail": "The page can be embedded by another origin, which is the basis of clickjacking attacks.",
+          "evidence": "header absent",
+          "remediation": "Send: X-Frame-Options: DENY (or SAMEORIGIN); prefer CSP frame-ancestors 'none'.",
+          "reference": "https://owasp.org/www-project-secure-headers/"
+        },
+        {
+          "check": "cookie-httponly",
+          "severity": "medium",
+          "title": "Cookie \"tracking\" is readable from JavaScript (no HttpOnly)",
+          "detail": "Without HttpOnly any cross-site scripting bug can exfiltrate or replace this cookie through document.cookie.",
+          "evidence": "tracking=seen-1; Path=/",
+          "remediation": "Add the HttpOnly attribute to the cookie.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-samesite",
+          "severity": "medium",
+          "title": "Cookie \"tracking\" has no SameSite attribute",
+          "detail": "Browsers then apply their own default, which historically meant the cookie rode along on cross-site requests, enabling CSRF.",
+          "evidence": "tracking=seen-1; Path=/",
+          "remediation": "Set SameSite=Lax for session cookies; use SameSite=None only when cross-site posting is genuinely required.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-secure",
+          "severity": "medium",
+          "title": "Cookie \"tracking\" is missing the Secure flag",
+          "detail": "The page itself is served over plaintext http://, so this cookie crossed the network unencrypted and was readable by anyone on the path.",
+          "evidence": "tracking=seen-1; Path=/",
+          "remediation": "Add the Secure attribute and serve the application over HTTPS only.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "x-content-type-options",
+          "severity": "medium",
+          "title": "X-Content-Type-Options: nosniff missing",
+          "detail": "Browsers may MIME-sniff a response and execute it as a content type other than the one declared.",
+          "evidence": "header absent",
+          "remediation": "Send: X-Content-Type-Options: nosniff on every response.",
+          "reference": "https://developer.mozilla.org/docs/Web/HTTP/Headers"
+        },
+        {
+          "check": "referrer-policy",
+          "severity": "low",
+          "title": "Referrer-Policy header missing",
+          "detail": "Outbound requests can leak full URLs - which often carry tokens or identifiers - to third-party origins in the Referer header.",
+          "evidence": "header absent",
+          "remediation": "Send: Referrer-Policy: strict-origin-when-cross-origin (or no-referrer for sensitive pages).",
+          "reference": "https://developer.mozilla.org/docs/Web/HTTP/Headers"
+        },
+        {
+          "check": "x-powered-by-disclosure",
+          "severity": "low",
+          "title": "X-Powered-By exposes the technology stack",
+          "detail": "Framework and runtime versions advertised in headers narrow down which known issues apply to this host.",
+          "evidence": "X-Powered-By: PHP/7.4.3",
+          "remediation": "Disable the banner: Express app.disable('x-powered-by'); PHP expose_php = Off.",
+          "reference": "https://cwe.mitre.org/data/definitions/200.html"
+        },
+        {
+          "check": "permissions-policy",
+          "severity": "info",
+          "title": "Permissions-Policy header missing",
+          "detail": "Browser features such as camera, microphone and geolocation stay available to the document and its embeds.",
+          "evidence": "header absent",
+          "remediation": "Send: Permissions-Policy: camera=(), microphone=(), geolocation=() to disable features the app does not use.",
+          "reference": "https://owasp.org/www-project-secure-headers/"
+        },
+        {
+          "check": "server-version-disclosure",
+          "severity": "info",
+          "title": "Server header discloses a software version",
+          "detail": "A versioned product banner can be matched directly against public vulnerability and exploit data.",
+          "evidence": "Server: Apache/2.4.41 (Ubuntu)",
+          "remediation": "Remove the version detail, leaving at most a generic product name. Nginx: server_tokens off; Apache: ServerTokens Prod.",
+          "reference": "https://cwe.mitre.org/data/definitions/200.html"
+        }
+      ]
+    },
+    {
+      "url": "http://127.0.0.1:8080/",
+      "final_url": "http://127.0.0.1:8080/",
+      "method": "GET",
+      "status_code": 200,
+      "accessed_at": "2026-10-25T06:16:41Z",
+      "elapsed_ms": 0,
+      "response_headers": {
+        "Cache-Control": [
+          "no-store"
+        ],
+        "Content-Length": [
+          "211"
+        ],
+        "Content-Security-Policy": [
+          "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'"
+        ],
+        "Content-Type": [
+          "text/html; charset=utf-8"
+        ],
+        "Date": [
+          "Sun, 25 Oct 2026 06:16:41 GMT"
+        ],
+        "Permissions-Policy": [
+          "camera=(), microphone=(), geolocation=()"
+        ],
+        "Referrer-Policy": [
+          "strict-origin-when-cross-origin"
+        ],
+        "Server": [
+          "labserver"
+        ],
+        "Strict-Transport-Security": [
+          "max-age=31536000; includeSubDomains"
+        ],
+        "X-Content-Type-Options": [
+          "nosniff"
+        ],
+        "X-Frame-Options": [
+          "DENY"
+        ]
+      },
+      "findings": [
+        {
+          "check": "plain-http",
+          "severity": "high",
+          "title": "Target served over unencrypted HTTP",
+          "detail": "Content fetched from http://127.0.0.1:8080/ travels in plaintext: credentials, session cookies and page data are readable by anyone on the path.",
+          "evidence": "http://127.0.0.1:8080/",
+          "remediation": "Serve the site over HTTPS only and redirect HTTP to HTTPS with 301.",
+          "reference": "https://owasp.org/www-project-top-ten/"
+        }
+      ]
+    }
+  ]
+}

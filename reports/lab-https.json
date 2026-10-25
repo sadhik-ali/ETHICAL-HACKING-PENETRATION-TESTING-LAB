@@ -1,0 +1,298 @@
+{
+  "tool": "secscan",
+  "version": "0.1.0",
+  "generated_at": "2026-10-25T06:16:41Z",
+  "scope_note": "Passive, non-intrusive inspection of HTTP response headers, cookies and TLS certificates. No exploitation, fuzzing, credential testing, port scanning or denial-of-service behaviour. Point it only at systems you own or have written permission to test.",
+  "authorization": {
+    "loopback_only": true,
+    "written_permission_confirmed": false,
+    "targets": [
+      "https://127.0.0.1:8443/login"
+    ]
+  },
+  "summary": {
+    "targets": 1,
+    "findings": 22,
+    "by_severity": {
+      "high": 9,
+      "info": 3,
+      "low": 4,
+      "medium": 6
+    },
+    "by_check": {
+      "cache-control-on-sensitive-response": 1,
+      "clickjacking-protection": 1,
+      "content-security-policy": 1,
+      "cookie-carries-jwt": 1,
+      "cookie-domain-scope": 1,
+      "cookie-httponly": 3,
+      "cookie-samesite": 2,
+      "cookie-samesite-none-without-secure": 1,
+      "cookie-secure": 3,
+      "permissions-policy": 1,
+      "referrer-policy": 1,
+      "server-version-disclosure": 1,
+      "strict-transport-security": 1,
+      "tls-chain-untrusted": 1,
+      "tls-expiring-soon": 1,
+      "x-content-type-options": 1,
+      "x-powered-by-disclosure": 1
+    },
+    "highest_severity": "high",
+    "errors": 0
+  },
+  "targets": [
+    {
+      "url": "https://127.0.0.1:8443/login",
+      "final_url": "https://127.0.0.1:8443/login",
+      "method": "GET",
+      "status_code": 200,
+      "accessed_at": "2026-10-25T06:16:41Z",
+      "elapsed_ms": 20,
+      "tls": {
+        "protocol": "TLS 1.3",
+        "server_name": "127.0.0.1",
+        "issuer": "CN=secscan-lab,O=Ethical Hacking Lab",
+        "subject": "CN=secscan-lab,O=Ethical Hacking Lab",
+        "serial_number": "225827695824093988603690090943034310800",
+        "not_before": "2026-10-25T05:16:04Z",
+        "not_after": "2026-10-28T06:16:04Z",
+        "days_remaining": 2,
+        "hostname_valid": true,
+        "chain_verified": false,
+        "handshake_verification_skipped": true,
+        "san_entries": [
+          "localhost"
+        ],
+        "verify_error": "x509: certificate signed by unknown authority"
+      },
+      "response_headers": {
+        "Content-Length": [
+          "173"
+        ],
+        "Content-Type": [
+          "text/html; charset=utf-8"
+        ],
+        "Date": [
+          "Sun, 25 Oct 2026 06:16:41 GMT"
+        ],
+        "Server": [
+          "nginx/1.18.0"
+        ],
+        "Set-Cookie": [
+          "session_id=abc123def456; Path=/; Domain=localhost",
+          "remember_me=eyJhbGciOiJub25lIn0.eyJzdWIiOiIxIn0.; Path=/",
+          "csrf_token=deadbeef; SameSite=None"
+        ],
+        "X-Powered-By": [
+          "Express"
+        ]
+      },
+      "set_cookie_headers": [
+        "session_id=abc123def456; Path=/; Domain=localhost",
+        "remember_me=eyJhbGciOiJub25lIn0.eyJzdWIiOiIxIn0.; Path=/",
+        "csrf_token=deadbeef; SameSite=None"
+      ],
+      "findings": [
+        {
+          "check": "content-security-policy",
+          "severity": "high",
+          "title": "Content-Security-Policy header missing",
+          "detail": "Without CSP the browser has no policy restricting script sources, so any injected markup executes as the page origin.",
+          "evidence": "header absent",
+          "remediation": "Send a CSP that whitelists script sources, for example: default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'.",
+          "reference": "https://content-security-policy.com/"
+        },
+        {
+          "check": "cookie-httponly",
+          "severity": "high",
+          "title": "Cookie \"session_id\" is readable from JavaScript (no HttpOnly)",
+          "detail": "Without HttpOnly any cross-site scripting bug can exfiltrate or replace this cookie through document.cookie.",
+          "evidence": "session_id=abc123def456; Path=/; Domain=localhost",
+          "remediation": "Add the HttpOnly attribute to the cookie.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-httponly",
+          "severity": "high",
+          "title": "Cookie \"remember_me\" is readable from JavaScript (no HttpOnly)",
+          "detail": "Without HttpOnly any cross-site scripting bug can exfiltrate or replace this cookie through document.cookie.",
+          "evidence": "remember_me=eyJhbGciOiJub25lIn0.eyJzdWIiOiIxIn0.; Path=/",
+          "remediation": "Add the HttpOnly attribute to the cookie.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-httponly",
+          "severity": "high",
+          "title": "Cookie \"csrf_token\" is readable from JavaScript (no HttpOnly)",
+          "detail": "Without HttpOnly any cross-site scripting bug can exfiltrate or replace this cookie through document.cookie.",
+          "evidence": "csrf_token=deadbeef; SameSite=None",
+          "remediation": "Add the HttpOnly attribute to the cookie.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-samesite-none-without-secure",
+          "severity": "high",
+          "title": "Cookie \"csrf_token\" uses SameSite=None without Secure",
+          "detail": "SameSite=None requires Secure; browsers reject the combination, and until they do the cookie is sent cross-site over plaintext.",
+          "evidence": "csrf_token=deadbeef; SameSite=None",
+          "remediation": "Add Secure, or switch to SameSite=Lax/Strict.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-secure",
+          "severity": "high",
+          "title": "Cookie \"session_id\" is missing the Secure flag",
+          "detail": "The cookie was set on an encrypted page but lacks Secure, so browsers will also send it over plaintext http://, where it can be captured.",
+          "evidence": "session_id=abc123def456; Path=/; Domain=localhost",
+          "remediation": "Add the Secure attribute and serve the application over HTTPS only.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-secure",
+          "severity": "high",
+          "title": "Cookie \"remember_me\" is missing the Secure flag",
+          "detail": "The cookie was set on an encrypted page but lacks Secure, so browsers will also send it over plaintext http://, where it can be captured.",
+          "evidence": "remember_me=eyJhbGciOiJub25lIn0.eyJzdWIiOiIxIn0.; Path=/",
+          "remediation": "Add the Secure attribute and serve the application over HTTPS only.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-secure",
+          "severity": "high",
+          "title": "Cookie \"csrf_token\" is missing the Secure flag",
+          "detail": "The cookie was set on an encrypted page but lacks Secure, so browsers will also send it over plaintext http://, where it can be captured.",
+          "evidence": "csrf_token=deadbeef; SameSite=None",
+          "remediation": "Add the Secure attribute and serve the application over HTTPS only.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "strict-transport-security",
+          "severity": "high",
+          "title": "Strict-Transport-Security header missing",
+          "detail": "HSTS tells browsers to always use HTTPS, which blocks SSL-stripping and http-to-https downgrade attacks.",
+          "evidence": "header absent",
+          "remediation": "Send: Strict-Transport-Security: max-age=31536000; includeSubDomains",
+          "reference": "https://developer.mozilla.org/docs/Web/HTTP/Headers"
+        },
+        {
+          "check": "clickjacking-protection",
+          "severity": "medium",
+          "title": "Clickjacking protection missing (X-Frame-Options or CSP frame-ancestors)",
+          "detail": "The page can be embedded by another origin, which is the basis of clickjacking attacks.",
+          "evidence": "header absent",
+          "remediation": "Send: X-Frame-Options: DENY (or SAMEORIGIN); prefer CSP frame-ancestors 'none'.",
+          "reference": "https://owasp.org/www-project-secure-headers/"
+        },
+        {
+          "check": "cookie-samesite",
+          "severity": "medium",
+          "title": "Cookie \"session_id\" has no SameSite attribute",
+          "detail": "Browsers then apply their own default, which historically meant the cookie rode along on cross-site requests, enabling CSRF.",
+          "evidence": "session_id=abc123def456; Path=/; Domain=localhost",
+          "remediation": "Set SameSite=Lax for session cookies; use SameSite=None only when cross-site posting is genuinely required.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "cookie-samesite",
+          "severity": "medium",
+          "title": "Cookie \"remember_me\" has no SameSite attribute",
+          "detail": "Browsers then apply their own default, which historically meant the cookie rode along on cross-site requests, enabling CSRF.",
+          "evidence": "remember_me=eyJhbGciOiJub25lIn0.eyJzdWIiOiIxIn0.; Path=/",
+          "remediation": "Set SameSite=Lax for session cookies; use SameSite=None only when cross-site posting is genuinely required.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "tls-chain-untrusted",
+          "severity": "medium",
+          "title": "Self-signed certificate (no trusted issuer)",
+          "detail": "x509: certificate signed by unknown authority",
+          "evidence": "Issuer: CN=secscan-lab,O=Ethical Hacking Lab",
+          "remediation": "Install a certificate from a public CA, or distribute your internal CA root to clients. Self-signed material is acceptable only inside an isolated lab.",
+          "reference": "https://datatracker.ietf.org/doc/html/rfc5280"
+        },
+        {
+          "check": "tls-expiring-soon",
+          "severity": "medium",
+          "title": "Certificate expires in 2 day(s)",
+          "detail": "Certificates within a month of expiry commonly lapse silently and cause outages and warning pages.",
+          "evidence": "NotAfter: 2026-10-28T06:16:04Z",
+          "remediation": "Renew now and automate renewal (for example ACME/certbot with a timer).",
+          "reference": "https://datatracker.ietf.org/doc/html/rfc5280"
+        },
+        {
+          "check": "x-content-type-options",
+          "severity": "medium",
+          "title": "X-Content-Type-Options: nosniff missing",
+          "detail": "Browsers may MIME-sniff a response and execute it as a content type other than the one declared.",
+          "evidence": "header absent",
+          "remediation": "Send: X-Content-Type-Options: nosniff on every response.",
+          "reference": "https://developer.mozilla.org/docs/Web/HTTP/Headers"
+        },
+        {
+          "check": "cache-control-on-sensitive-response",
+          "severity": "low",
+          "title": "Authentication-related path /login is served without Cache-Control: no-store",
+          "detail": "Shared caches and browser history may retain a response that carries credentials, tokens or personal data.",
+          "evidence": "Cache-Control: (absent)",
+          "remediation": "Send: Cache-Control: no-store on login, token, session and account responses.",
+          "reference": "https://datatracker.ietf.org/doc/html/rfc9110#section.5.2.2"
+        },
+        {
+          "check": "cookie-domain-scope",
+          "severity": "low",
+          "title": "Cookie \"session_id\" is scoped to the whole domain \"localhost\"",
+          "detail": "Every current and future subdomain receives this cookie, so a weak subdomain can read or set session material for the main application.",
+          "evidence": "session_id=abc123def456; Path=/; Domain=localhost",
+          "remediation": "Omit Domain, or pin it to the exact host that needs the cookie.",
+          "reference": "https://owasp.org/www-community/controls/SecureCookieAttribute"
+        },
+        {
+          "check": "referrer-policy",
+          "severity": "low",
+          "title": "Referrer-Policy header missing",
+          "detail": "Outbound requests can leak full URLs - which often carry tokens or identifiers - to third-party origins in the Referer header.",
+          "evidence": "header absent",
+          "remediation": "Send: Referrer-Policy: strict-origin-when-cross-origin (or no-referrer for sensitive pages).",
+          "reference": "https://developer.mozilla.org/docs/Web/HTTP/Headers"
+        },
+        {
+          "check": "x-powered-by-disclosure",
+          "severity": "low",
+          "title": "X-Powered-By exposes the technology stack",
+          "detail": "Framework and runtime versions advertised in headers narrow down which known issues apply to this host.",
+          "evidence": "X-Powered-By: Express",
+          "remediation": "Disable the banner: Express app.disable('x-powered-by'); PHP expose_php = Off.",
+          "reference": "https://cwe.mitre.org/data/definitions/200.html"
+        },
+        {
+          "check": "cookie-carries-jwt",
+          "severity": "info",
+          "title": "Cookie \"remember_me\" appears to carry a JWT",
+          "detail": "Tokens in cookies inherit every header risk above; also confirm the signature algorithm, expiry, and that refresh tokens are not stored client-side.",
+          "evidence": "remember_me=\u003c36 byte token\u003e",
+          "remediation": "Keep HttpOnly+Secure+SameSite, use short access-token lifetimes, and store long-lived tokens server-side.",
+          "reference": "https://datatracker.ietf.org/doc/html/rfc7519"
+        },
+        {
+          "check": "permissions-policy",
+          "severity": "info",
+          "title": "Permissions-Policy header missing",
+          "detail": "Browser features such as camera, microphone and geolocation stay available to the document and its embeds.",
+          "evidence": "header absent",
+          "remediation": "Send: Permissions-Policy: camera=(), microphone=(), geolocation=() to disable features the app does not use.",
+          "reference": "https://owasp.org/www-project-secure-headers/"
+        },
+        {
+          "check": "server-version-disclosure",
+          "severity": "info",
+          "title": "Server header discloses a software version",
+          "detail": "A versioned product banner can be matched directly against public vulnerability and exploit data.",
+          "evidence": "Server: nginx/1.18.0",
+          "remediation": "Remove the version detail, leaving at most a generic product name. Nginx: server_tokens off; Apache: ServerTokens Prod.",
+          "reference": "https://cwe.mitre.org/data/definitions/200.html"
+        }
+      ]
+    }
+  ]
+}
